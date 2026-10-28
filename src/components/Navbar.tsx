@@ -13,7 +13,6 @@ import {
   LogOut,
   LogIn,
   Shield,
-  Lock,
   Sun,
   Moon
 } from 'lucide-react';
@@ -25,15 +24,14 @@ export default function Navbar() {
 
   const isGuest = !currentUser || currentUser.id === 'usr_guest';
 
+  // Base links visible to every passenger and guest
   const navLinks = [
     { href: '/', label: 'Book Train', icon: Train },
     { href: '/my-bookings', label: 'My Bookings', icon: Ticket },
-    {
-      href: '/organiser',
-      label: 'Organiser Hub',
-      icon: BarChart3,
-      adminOnly: true,
-    },
+    // Organiser Hub is ONLY included if logged in as Admin/Organiser!
+    ...(isAdmin
+      ? [{ href: '/organiser', label: 'Organiser Hub', icon: BarChart3 }]
+      : []),
     { href: '/concurrency-test', label: 'Race-Condition Arena', icon: Zap, highlight: true },
   ];
 
@@ -74,11 +72,6 @@ export default function Navbar() {
               >
                 <Icon className={`w-4 h-4 ${link.highlight ? 'text-amber-400' : ''}`} />
                 <span>{link.label}</span>
-                {link.adminOnly && !isAdmin && (
-                  <span title="Admin access required">
-                    <Lock className="w-3 h-3 text-slate-500" />
-                  </span>
-                )}
                 {link.highlight && (
                   <span className="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded font-mono font-semibold">
                     TEST
@@ -150,7 +143,7 @@ export default function Navbar() {
               className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold transition-all shadow-md shadow-cyan-500/20"
             >
               <LogIn className="w-4 h-4" />
-              <span>Sign In / Register</span>
+              <span>Sign In</span>
             </Link>
           )}
         </div>
