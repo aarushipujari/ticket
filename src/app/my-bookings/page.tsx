@@ -34,7 +34,7 @@ export default function MyBookingsPage() {
   }, [userId]);
 
   const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this ticket? The seat will be immediately released.')) {
+    if (!confirm('Are you sure you want to cancel this ticket? The seat will be immediately released to waiting passengers.')) {
       return;
     }
 
@@ -58,7 +58,7 @@ export default function MyBookingsPage() {
       } else {
         setActionMessage({
           type: 'success',
-          text: 'Booking cancelled successfully. The seat has been restored to inventory and offered to the waitlist.',
+          text: 'Booking cancelled successfully. The seat inventory was restored and handed over to the waitlist.',
         });
         await fetchBookings();
       }
@@ -72,20 +72,20 @@ export default function MyBookingsPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center space-x-3">
-            <Ticket className="w-7 h-7 text-cyan-400" />
-            <span>My Bookings</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white flex items-center space-x-3">
+            <Ticket className="w-7 h-7 text-blue-600 dark:text-blue-400" />
+            <span>My Bookings &amp; Itineraries</span>
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
-            Active and past rail reservations for <strong className="text-slate-200">{userName}</strong>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Confirmed rail reservations for <strong className="text-slate-800 dark:text-slate-200">{userName}</strong>
           </p>
         </div>
 
         <Link
           href="/"
-          className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold transition-all shadow-md shadow-cyan-500/20"
+          className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-sm"
         >
           <Train className="w-4 h-4" />
           <span>Book New Journey</span>
@@ -95,23 +95,23 @@ export default function MyBookingsPage() {
       {/* Action Notification */}
       {actionMessage && (
         <div
-          className={`px-4 py-3 rounded-xl flex items-center justify-between text-sm ${
+          className={`px-4 py-3.5 rounded-2xl flex items-center justify-between text-sm ${
             actionMessage.type === 'success'
-              ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
-              : 'bg-rose-500/10 border border-rose-500/30 text-rose-300'
+              ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
+              : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-300'
           }`}
         >
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2.5">
             {actionMessage.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
             )}
             <span>{actionMessage.text}</span>
           </div>
           <button
             onClick={() => setActionMessage(null)}
-            className="text-xs uppercase font-semibold hover:opacity-80 ml-4"
+            className="text-xs uppercase font-bold hover:opacity-80 ml-4 tracking-wider"
           >
             Dismiss
           </button>
@@ -120,24 +120,24 @@ export default function MyBookingsPage() {
 
       {/* Bookings List */}
       {loading ? (
-        <div className="py-20 text-center text-slate-500 flex flex-col items-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-          <p className="text-sm font-medium">Loading your confirmed tickets...</p>
+        <div className="py-20 text-center text-slate-500 dark:text-slate-400 flex flex-col items-center space-y-3">
+          <RefreshCw className="w-7 h-7 text-blue-600 dark:text-blue-400 animate-spin" />
+          <p className="text-sm font-semibold">Retrieving your confirmed rail passes...</p>
         </div>
       ) : bookings.length === 0 ? (
-        <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-slate-800/80 border border-slate-700 flex items-center justify-center mx-auto text-slate-400">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
             <Ticket className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-white">No Bookings Found</h3>
-          <p className="text-sm text-slate-400 max-w-sm mx-auto">
-            You haven't reserved any seats yet as {userName}. Head over to the booking page to reserve a seat.
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">No Active Reservations</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+            You haven't reserved any tickets yet as {userName}. Choose your route and lock your seat in real time.
           </p>
           <Link
             href="/"
-            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-sm font-bold transition-all shadow-lg shadow-cyan-500/20"
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-all shadow-sm"
           >
-            <span>Explore Seats</span>
+            <span>Explore Train Routes</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -149,25 +149,29 @@ export default function MyBookingsPage() {
             return (
               <div
                 key={b.id}
-                className={`border rounded-2xl p-5 sm:p-6 transition-all ${
+                className={`border rounded-3xl p-5 sm:p-6 transition-all ${
                   isCancelled
-                    ? 'bg-slate-950/40 border-slate-800/60 opacity-60'
-                    : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 shadow-xl'
+                    ? 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 opacity-60'
+                    : 'bg-white dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md'
                 }`}
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800/80 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
-                      <Train className="w-5 h-5" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold">
+                      <Train className="w-6 h-6" />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-extrabold text-white text-base">{b.train_name}</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 font-mono text-cyan-400 border border-slate-700 font-semibold">
+                        <span className="font-extrabold text-slate-900 dark:text-white text-base">
+                          {b.train_name}
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 font-mono text-blue-700 dark:text-blue-400 border border-slate-200 dark:border-slate-700 font-bold">
                           {b.train_number}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 font-mono">Ref: {b.booking_reference}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                        PNR: {b.booking_reference}
+                      </p>
                     </div>
                   </div>
 
@@ -175,8 +179,8 @@ export default function MyBookingsPage() {
                     <span
                       className={`text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider font-mono ${
                         isCancelled
-                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800'
+                          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
                       }`}
                     >
                       {b.status}
@@ -187,40 +191,50 @@ export default function MyBookingsPage() {
                 {/* Journey Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 my-4 text-xs">
                   <div>
-                    <span className="text-slate-400 uppercase font-semibold text-[10px]">Route Segments</span>
-                    <p className="font-bold text-white text-sm mt-0.5">
+                    <span className="text-slate-400 uppercase font-bold text-[10px] tracking-wider">
+                      Route Segments
+                    </span>
+                    <p className="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5">
                       {b.start_station_name} ➔ {b.end_station_name}
                     </p>
-                    <p className="text-slate-400">Stop {b.start_stop_order} to Stop {b.end_stop_order}</p>
+                    <p className="text-slate-500 dark:text-slate-400">Stop {b.start_stop_order} to Stop {b.end_stop_order}</p>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 uppercase font-semibold text-[10px]">Seat Allocation</span>
-                    <p className="font-bold text-cyan-400 text-sm mt-0.5">
+                    <span className="text-slate-400 uppercase font-bold text-[10px] tracking-wider">
+                      Seat &amp; Class
+                    </span>
+                    <p className="font-extrabold text-blue-700 dark:text-blue-400 text-sm mt-0.5">
                       Seat {b.seat_number} ({b.coach_code})
                     </p>
-                    <p className="text-slate-400">{b.class_type}</p>
+                    <p className="text-slate-500 dark:text-slate-400">{b.class_type || 'Reserved Carriage'}</p>
                   </div>
 
                   <div>
-                    <span className="text-slate-400 uppercase font-semibold text-[10px]">Fare & Timestamp</span>
-                    <p className="font-extrabold text-emerald-400 text-sm mt-0.5">₹{b.total_price}</p>
-                    <p className="text-slate-400">{new Date(b.created_at).toLocaleDateString()}</p>
+                    <span className="text-slate-400 uppercase font-bold text-[10px] tracking-wider">
+                      Fare &amp; Date
+                    </span>
+                    <p className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm mt-0.5">
+                      ₹{b.total_price}
+                    </p>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      {new Date(b.created_at).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
 
                 {/* Cancel Action */}
                 {!isCancelled && (
-                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400">
-                      Cancellation automatically releases seat lock for other passengers.
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Cancellation immediately frees inventory and notifies the waitlist queue.
                     </span>
                     <button
                       disabled={cancellingId === b.id}
                       onClick={() => handleCancelBooking(b.id)}
-                      className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition-all hover:scale-105"
+                      className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all self-end sm:self-auto"
                     >
-                      {cancellingId === b.id ? 'Cancelling...' : 'Cancel Reservation'}
+                      {cancellingId === b.id ? 'Processing...' : 'Cancel Ticket'}
                     </button>
                   </div>
                 )}

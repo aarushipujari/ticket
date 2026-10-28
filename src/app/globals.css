@@ -3,73 +3,65 @@
 @tailwind utilities;
 
 :root {
-  --background: #090d16;
-  --foreground: #f1f5f9;
-}
-
-html.light {
   --background: #f8fafc;
   --foreground: #0f172a;
 }
 
+html.dark {
+  --background: #0b1120;
+  --foreground: #f8fafc;
+}
+
 body {
-  color: var(--foreground);
-  min-height: 100vh;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Dark mode background gradient */
-html.dark body {
-  background: radial-gradient(circle at 50% 0%, #151e32 0%, #090d16 80%);
+/* Railway Ticket Perforation Effect */
+.ticket-edge-left {
+  position: relative;
+}
+.ticket-edge-left::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: var(--background);
+  border-radius: 9999px;
+  box-shadow: inset -2px 0 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Light mode background */
-html.light body {
-  background: #f8fafc;
-  color: #0f172a;
+.ticket-edge-right {
+  position: relative;
+}
+.ticket-edge-right::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: var(--background);
+  border-radius: 9999px;
+  box-shadow: inset 2px 0 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Light mode adjustments for common slate classes */
-html.light .bg-slate-950 {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
+/* Subtle glowing pulse animations for held seats */
+@keyframes pulse-glow-amber {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.3), 0 4px 12px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.6), 0 6px 18px rgba(245, 158, 11, 0.4);
+  }
 }
 
-html.light .bg-slate-900\/60,
-html.light .bg-slate-900\/70,
-html.light .bg-slate-900\/80,
-html.light .bg-slate-900\/90,
-html.light .bg-slate-900 {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-html.light .border-slate-800,
-html.light .border-slate-800\/80,
-html.light .border-slate-700 {
-  border-color: #e2e8f0 !important;
-}
-
-html.light .text-slate-300,
-html.light .text-slate-200 {
-  color: #1e293b !important;
-}
-
-html.light .text-slate-400 {
-  color: #64748b !important;
-}
-
-html.light .text-white {
-  color: #0f172a !important;
-}
-
-html.light input,
-html.light select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
+.glow-held {
+  animation: pulse-glow-amber 2s infinite ease-in-out;
 }
 
 /* Custom scrollbar */
@@ -81,20 +73,9 @@ html.light select {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: #cbd5e1;
   border-radius: 4px;
 }
-
-/* Subtle glowing pulse animations */
-@keyframes pulse-glow-amber {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
-  }
-}
-
-.glow-held {
-  animation: pulse-glow-amber 2s infinite ease-in-out;
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
 }
