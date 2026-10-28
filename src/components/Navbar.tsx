@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUser } from '@/context/UserContext';
@@ -13,7 +13,6 @@ import {
   LogOut,
   LogIn,
   Shield,
-  Lock,
   Sun,
   Moon
 } from 'lucide-react';
@@ -23,17 +22,21 @@ export default function Navbar() {
   const router = useRouter();
   const { currentUser, isAdmin, theme, toggleTheme, logout } = useUser();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const isGuest = !currentUser || currentUser.id === 'usr_guest';
 
+  // Base navigation links visible to every regular passenger/commuter
+  // "Organiser Hub" is ONLY added when the verified administrator is logged in!
   const navLinks = [
     { href: '/', label: 'Book Train', icon: Train },
     { href: '/my-bookings', label: 'My Bookings', icon: Ticket },
-    {
-      href: '/organiser',
-      label: 'Organiser Hub',
-      icon: BarChart3,
-      adminOnly: true,
-    },
+    ...(mounted && isAdmin
+      ? [{ href: '/organiser', label: 'Organiser Hub', icon: BarChart3 }]
+      : []),
     { href: '/concurrency-test', label: 'Race-Condition Arena', icon: Zap, highlight: true },
   ];
 
@@ -94,11 +97,6 @@ export default function Navbar() {
               >
                 <Icon className="w-4 h-4" />
                 <span>{link.label}</span>
-                {link.adminOnly && !isAdmin && (
-                  <span title="Admin access required">
-                    <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 ml-0.5" />
-                  </span>
-                )}
               </Link>
             );
           })}
