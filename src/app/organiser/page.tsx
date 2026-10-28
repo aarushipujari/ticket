@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useUser, ADMIN_PASSWORD } from '@/context/UserContext';
+import { useUser } from '@/context/UserContext';
 import {
   BarChart3,
   DollarSign,
@@ -21,7 +21,7 @@ import {
 import Link from 'next/link';
 
 export default function OrganiserDashboard() {
-  const { currentUser, isAdmin, login } = useUser();
+  const { currentUser, isAdmin, unlockAdmin } = useUser();
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -57,9 +57,9 @@ export default function OrganiserDashboard() {
     e.preventDefault();
     setPasscodeError(null);
 
-    const result = await login(currentUser?.email || 'admin@railsync.com', passcode);
+    const result = await unlockAdmin(passcode);
     if (!result.success) {
-      setPasscodeError('Incorrect passcode. Passcode must be admin123');
+      setPasscodeError('Incorrect administrator password.');
     } else {
       setPasscode('');
     }
@@ -78,9 +78,9 @@ export default function OrganiserDashboard() {
             <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase font-bold">
               Restricted Area • Organiser Clearance Only
             </span>
-            <h2 className="text-2xl font-extrabold text-white">Organiser Dashboard</h2>
+            <h2 className="text-2xl font-extrabold text-white">Organiser Command Center</h2>
             <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-              Enter the admin password <code className="text-cyan-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded">admin123</code> to access real-time train telemetry and financial reports.
+              This dashboard contains protected revenue and operational telemetry. Please authenticate with administrator credentials to continue.
             </p>
           </div>
 
@@ -100,7 +100,7 @@ export default function OrganiserDashboard() {
                 required
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter admin password (admin123)"
+                placeholder="Enter administrator password"
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
             </div>
@@ -109,7 +109,7 @@ export default function OrganiserDashboard() {
               type="submit"
               className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-sm shadow-lg shadow-purple-600/30 transition-all hover:scale-[1.01]"
             >
-              Unlock Organiser Dashboard
+              Authenticate as Organiser
             </button>
           </form>
 
@@ -134,7 +134,7 @@ export default function OrganiserDashboard() {
         <div>
           <div className="flex items-center space-x-2 text-purple-400 text-xs font-semibold uppercase tracking-wider mb-1">
             <ShieldCheck className="w-4 h-4" />
-            <span>Admin Clearance Verified • Password (admin123)</span>
+            <span>Admin Clearance Verified • System Administrator</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
             Dispatch Operations Command

@@ -9,20 +9,17 @@ export interface UserProfile {
   role: 'passenger' | 'organiser';
 }
 
-export const ADMIN_PASSWORD = 'admin123';
-
 interface UserContextType {
   currentUser: UserProfile | null;
   isAdmin: boolean;
   theme: 'dark' | 'light';
   toggleTheme: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  unlockAdmin: (password: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: {
     name: string;
     email: string;
     password: string;
-    role: 'passenger' | 'organiser';
-    adminCode?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
@@ -43,12 +40,11 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (parsed && parsed.id) setCurrentUser(parsed);
       } catch {}
     } else {
-      // Default to guest passenger if not logged in
-      const guest = {
+      const guest: UserProfile = {
         id: 'usr_guest',
         name: 'Guest Passenger',
         email: 'guest@railsync.com',
-        role: 'passenger' as const,
+        role: 'passenger',
       };
       setCurrentUser(guest);
       localStorage.setItem('railsync_auth_user', JSON.stringify(guest));
@@ -105,12 +101,31 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const unlockAdmin = async (password: string) => {
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'VERIFY_ADMIN', password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Invalid organiser credentials' };
+      }
+
+      setCurrentUser(data.user);
+      localStorage.setItem('railsync_auth_user', JSON.stringify(data.user));
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message || 'Verification error' };
+    }
+  };
+
   const register = async (formData: {
     name: string;
     email: string;
     password: string;
-    role: 'passenger' | 'organiser';
-    adminCode?: string;
   }) => {
     try {
       const res = await fetch('/api/auth', {
@@ -128,16 +143,16 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('railsync_auth_user', JSON.stringify(data.user));
       return { success: true };
     } catch (err: any) {
-      return { success: false, error: err.message || 'Network error during signup' };
+      return { success: false, error: err.message || 'Network error during registration' };
     }
   };
 
   const logout = () => {
-    const guest = {
+    const guest: UserProfile = {
       id: 'usr_guest',
       name: 'Guest Passenger',
       email: 'guest@railsync.com',
-      role: 'passenger' as const,
+      role: 'passenger',
     };
     setCurrentUser(guest);
     localStorage.setItem('railsync_auth_user', JSON.stringify(guest));
@@ -153,6 +168,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         theme,
         toggleTheme,
         login,
+        unlockAdmin,
         register,
         logout,
       }}
