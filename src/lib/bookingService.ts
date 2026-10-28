@@ -320,7 +320,7 @@ export class BookingService {
       const totalPrice = hold.base_price * segmentCount;
 
       const bookingId = 'bk_' + Math.random().toString(36).substring(2, 9);
-      const bookingRef = 'RS-' + Math.floor(100000 + Math.random() * 900000);
+      const bookingRef = 'PNR-' + Math.floor(1000000 + Math.random() * 9000000);
       const now = new Date().toISOString();
 
       // Insert booking

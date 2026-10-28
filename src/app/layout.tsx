@@ -23,8 +23,8 @@ export default function RootLayout({
           </main>
           <footer className="border-t border-slate-900 bg-slate-950/40 py-6 text-center text-xs text-slate-500">
             <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <span>RailSync Engine v1.0 • ACID Transactions with SQLite WAL Mode</span>
-              <span className="text-slate-400">Evaluating 10/10 Criteria with Zero Race Conditions</span>
+              <span>RailSync Express • Indian Railways Multi-Stop Concurrency Engine</span>
+              <span className="text-slate-400">ACID Transactions with SQLite WAL Mode</span>
             </div>
           </footer>
         </UserProvider>

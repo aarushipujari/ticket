@@ -196,7 +196,7 @@ export default function AuthPage() {
           RailSync Account Portal
         </h1>
         <p className="text-xs text-slate-400">
-          Secure Authentication • Role-Based Access Control
+          Passenger Reservation & Ticket Booking Portal
         </p>
       </div>
 

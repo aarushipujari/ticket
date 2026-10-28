@@ -204,7 +204,7 @@ export default function MyBookingsPage() {
 
                   <div>
                     <span className="text-slate-400 uppercase font-semibold text-[10px]">Fare & Timestamp</span>
-                    <p className="font-extrabold text-emerald-400 text-sm mt-0.5">${b.total_price}</p>
+                    <p className="font-extrabold text-emerald-400 text-sm mt-0.5">₹{b.total_price}</p>
                     <p className="text-slate-400">{new Date(b.created_at).toLocaleDateString()}</p>
                   </div>
                 </div>

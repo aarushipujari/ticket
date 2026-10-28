@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import {
   BarChart3,
-  DollarSign,
+  IndianRupee,
   Users,
   CheckCircle2,
   Clock,
@@ -160,10 +160,10 @@ export default function OrganiserDashboard() {
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Revenue</span>
             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <DollarSign className="w-5 h-5" />
+              <IndianRupee className="w-5 h-5" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-white mt-3">${metrics?.totalRevenue || 0}</p>
+          <p className="text-3xl font-extrabold text-white mt-3">₹{metrics?.totalRevenue || 0}</p>
           <p className="text-[11px] text-emerald-400 flex items-center space-x-1 mt-1 font-medium">
             <TrendingUp className="w-3.5 h-3.5" />
             <span>Real-time settled funds</span>
@@ -249,7 +249,7 @@ export default function OrganiserDashboard() {
                     <td className="py-3 px-4 text-slate-300 font-sans">
                       {b.start_station_name} ➔ {b.end_station_name}
                     </td>
-                    <td className="py-3 px-4 font-bold text-emerald-400">${b.total_price}</td>
+                    <td className="py-3 px-4 font-bold text-emerald-400">₹{b.total_price}</td>
                     <td className="py-3 px-4">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${

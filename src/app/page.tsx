@@ -31,9 +31,9 @@ export default function BookingPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCoachId, setSelectedCoachId] = useState<string>('coach_101_A');
 
-  // Journey stops (0: Grand Central, 1: East Park, 2: Highland, 3: Riverport)
+  // Journey stops (0: New Delhi, 1: Kanpur, 2: Prayagraj, 3: Varanasi, 4: DDU, 5: Patna)
   const [startStop, setStartStop] = useState<number>(0);
-  const [endStop, setEndStop] = useState<number>(3);
+  const [endStop, setEndStop] = useState<number>(5);
 
   // Active user's hold state
   const [activeHold, setActiveHold] = useState<{
@@ -309,7 +309,7 @@ export default function BookingPage() {
               <span>Multi-Station Segment Lock • Zero Double-Booking Guaranteed</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Metropolitan Express #101
+              Vande Bharat Express (#22436)
             </h1>
             <p className="text-sm text-slate-300 mt-1 max-w-2xl">
               Experience atomic seat holds with real-time countdown, automatic waitlist handover, and zero race conditions across intermediate stations.
@@ -400,7 +400,7 @@ export default function BookingPage() {
             <div className="text-right">
               <p className="text-[10px] text-slate-400 uppercase font-semibold">Est. Ticket Price</p>
               <p className="text-lg font-extrabold text-white">
-                ${(selectedCoach?.base_price || 50) * (endStop - startStop)}
+                ₹{(selectedCoach?.base_price || 380) * (endStop - startStop)}
               </p>
             </div>
           </div>
@@ -471,7 +471,7 @@ export default function BookingPage() {
                     : 'text-slate-400 hover:text-white hover:bg-slate-900'
                 }`}
               >
-                {c.coach_code} (${c.base_price}/seg)
+                {c.coach_code} (₹{c.base_price}/seg)
               </button>
             ))}
           </div>
@@ -566,7 +566,7 @@ export default function BookingPage() {
                 </div>
                 <p className="text-xs text-slate-300">
                   {train?.stations.find((s) => s.stop_order === startStop)?.name} ➔{' '}
-                  {train?.stations.find((s) => s.stop_order === endStop)?.name} • Total: ${activeHold.price}
+                  {train?.stations.find((s) => s.stop_order === endStop)?.name} • Total: ₹{activeHold.price}
                 </p>
               </div>
             </div>
@@ -733,7 +733,7 @@ export default function BookingPage() {
                 <div className="text-right">
                   <p className="text-slate-500 uppercase">Fare Paid</p>
                   <p className="text-base font-extrabold text-emerald-400">
-                    ${confirmedBooking.total_price}
+                    ₹{confirmedBooking.total_price}
                   </p>
                 </div>
               </div>

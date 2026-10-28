@@ -96,10 +96,10 @@ export default function ConcurrencyTestPage() {
               onChange={(e) => setSeatId(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-slate-200 font-mono font-medium focus:ring-2 focus:ring-amber-500 focus:outline-none"
             >
-              <option value="seat_A_2B">Coach A • Seat 2B (Executive Chair)</option>
-              <option value="seat_A_1A">Coach A • Seat 1A (Executive Window)</option>
-              <option value="seat_B_3C">Coach B • Seat 3C (Standard Aisle)</option>
-              <option value="seat_B_4D">Coach B • Seat 4D (Standard Window)</option>
+              <option value="seat_A_2B">Coach E1 • Seat 2B (Executive Chair Car)</option>
+              <option value="seat_A_1A">Coach E1 • Seat 1A (Executive Window)</option>
+              <option value="seat_B_3C">Coach C1 • Seat 3C (AC Chair Car Aisle)</option>
+              <option value="seat_B_4D">Coach C1 • Seat 4D (AC Chair Car Window)</option>
             </select>
           </div>
 

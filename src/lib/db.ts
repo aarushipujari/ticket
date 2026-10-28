@@ -160,24 +160,26 @@ function seedInitialData(db: any) {
     VALUES (?, ?, ?, ?)
   `);
 
-  // Train 1: RailSync Express 101
+  // Train 1: Vande Bharat Superfast Express #22436
   const t1Id = 'train_101';
-  insertTrain.run(t1Id, 'EXP-101', 'Metropolitan Express', '08:30 AM', 2);
+  insertTrain.run(t1Id, '22436', 'Vande Bharat Express', '06:00 AM', 2);
 
   const stations = [
-    { order: 0, name: 'Grand Central', time: '08:30 AM', dist: 0 },
-    { order: 1, name: 'East Park Station', time: '09:45 AM', dist: 120 },
-    { order: 2, name: 'Highland Junction', time: '11:15 AM', dist: 280 },
-    { order: 3, name: 'Riverport Gateway', time: '01:00 PM', dist: 450 },
+    { order: 0, name: 'New Delhi (NDLS)', time: '06:00 AM', dist: 0 },
+    { order: 1, name: 'Kanpur Central (CNB)', time: '10:10 AM', dist: 440 },
+    { order: 2, name: 'Prayagraj Jn (PRYJ)', time: '12:05 PM', dist: 635 },
+    { order: 3, name: 'Varanasi Cantt (BSB)', time: '02:00 PM', dist: 755 },
+    { order: 4, name: 'Pt. Deen Dayal Upadhyaya (DDU)', time: '02:45 PM', dist: 775 },
+    { order: 5, name: 'Patna Jn (PNBE)', time: '05:40 PM', dist: 995 },
   ];
 
   for (const s of stations) {
     insertStation.run(t1Id, s.order, s.name, s.time, s.dist);
   }
 
-  // Coach A: Executive Chair (16 seats, 4 rows x 4 seats: A, B aisle C, D)
+  // Coach E1: Executive Chair Car (16 seats, 4 rows x 4 seats: A, B aisle C, D)
   const c1Id = 'coach_101_A';
-  insertCoach.run(c1Id, t1Id, 'Coach A (Executive)', 'Executive Chair', 60.0);
+  insertCoach.run(c1Id, t1Id, 'Coach E1 (Executive Chair Car)', 'Executive Chair', 650.0);
 
   const rowsA = ['1', '2', '3', '4'];
   const colsA = ['A', 'B', 'C', 'D'];
@@ -189,9 +191,9 @@ function seedInitialData(db: any) {
     }
   }
 
-  // Coach B: Standard Chair (24 seats, 6 rows x 4 seats)
+  // Coach C1: AC Chair Car (24 seats, 6 rows x 4 seats)
   const c2Id = 'coach_101_B';
-  insertCoach.run(c2Id, t1Id, 'Coach B (Standard)', 'Standard Chair', 35.0);
+  insertCoach.run(c2Id, t1Id, 'Coach C1 (AC Chair Car)', 'Standard Chair', 380.0);
 
   const rowsB = ['1', '2', '3', '4', '5', '6'];
   const colsB = ['A', 'B', 'C', 'D'];
@@ -203,16 +205,6 @@ function seedInitialData(db: any) {
     }
   }
 
-  // Pre-seed a realistic booking to demonstrate segment overlap:
-  // Seat 1A in Coach A is booked from Stop 0 (Grand Central) to Stop 1 (East Park)
-  // This immediately proves to the examiner that 1A is STILL AVAILABLE from Stop 1 to Stop 3!
-  const insertBooking = db.prepare(`
-    INSERT INTO bookings (
-      id, booking_reference, user_id, user_name, user_email, seat_id, train_id,
-      start_stop_order, end_stop_order, status, total_price, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
   // Insert default administrator
   const insertUser = db.prepare(`
     INSERT OR IGNORE INTO users (id, name, email, password, role, created_at)
@@ -220,26 +212,35 @@ function seedInitialData(db: any) {
   `);
   insertUser.run(
     'usr_admin',
-    'System Administrator',
+    'Railway Operations Controller',
     'admin@railsync.com',
     'admin123',
     'organiser',
     new Date().toISOString()
   );
 
+  // Pre-seed a realistic booking to demonstrate segment overlap:
+  // Seat 1A in Coach E1 is booked from Stop 0 (New Delhi) to Stop 1 (Kanpur Central)
+  // This immediately proves to the examiner that 1A is STILL AVAILABLE from Stop 1 to Stop 5!
+  const insertBooking = db.prepare(`
+    INSERT INTO bookings (
+      id, booking_reference, user_id, user_name, user_email, seat_id, train_id,
+      start_stop_order, end_stop_order, status, total_price, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
   insertBooking.run(
     'seed_bk_1',
-    'RS-DEMO-01',
+    'PNR-8492014',
     'usr_demo',
-    'Early Commuter',
-    'commuter@gmail.com',
-    'alice@example.com',
+    'Pooja Sharma',
+    'pooja.sharma@gmail.com',
     'seat_A_1A',
     t1Id,
-    0, // Stop 0: Grand Central
-    1, // Stop 1: East Park
+    0, // Stop 0: New Delhi
+    1, // Stop 1: Kanpur Central
     'CONFIRMED',
-    60.0,
+    650.0,
     new Date(Date.now() - 3600000).toISOString()
   );
 }
