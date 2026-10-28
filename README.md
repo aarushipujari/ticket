@@ -1,68 +1,206 @@
-# 🚆 RailSync Express
-### High-Concurrency Multi-Stop Ticket Reservation System
+# RailSync Express: High-Concurrency Railway Reservation System
 
-> Built for **PS1: Ticket Booking System** (Train Variant — **Bonus Marks Earned**).  
-> Guarantees **Zero Double-Bookings** using **ACID Transactions** with **SQLite WAL Mode**, real-time **120-Second Atomic Holds**, and an automated **FIFO Waitlist Handover**.
+RailSync Express is a full-stack ticket reservation and inventory management system designed for multi-stop passenger rail services. It models intermediate station segment allocation, enforces strict ACID concurrency control to eliminate double-bookings, manages 120-second atomic checkout holds, automates FIFO waitlist handovers, and provides a role-protected operator telemetry hub.
 
 ---
 
-## 🌟 Key Innovations & Features
+## Technical Overview
 
-### 1. Multi-Station Segment Relational Engine (Train Bonus Marks)
-Standard ticket systems only model single-hop inventory. **RailSync Express** implements a real **4-stop rail corridor**:
-$$\text{Grand Central (0)} \longrightarrow \text{East Park (1)} \longrightarrow \text{Highland Junction (2)} \longrightarrow \text{Riverport Gateway (3)}$$
-
-* **Non-Clashing Overlap Logic:** If Passenger A books Seat 1A from **Stop 0 ➔ 1**, the **exact same Seat 1A remains available** for Passenger B traveling **Stop 1 ➔ 3**!
-* **Mathematical Interval Overlap Rule:**
-  $$\text{existing\_start} < \text{requested\_end} \quad \text{AND} \quad \text{existing\_end} > \text{requested\_start}$$
-
-### 2. Live "Race-Condition Arena" (Criterion 5 Proof)
-A built-in interactive stress-testing panel (`/concurrency-test`) that launches **50 simultaneous bot requests at the exact same millisecond**:
-* **1 Lock Granted** (exclusive 120s checkout hold).
-* **49 Requests Rejected** with clean HTTP 409 Conflict.
-* **0 Double-Bookings** (mathematically and physically verified in the database).
-
-### 3. Automated Waitlist & Queue Handover (Smart Queue)
-When an in-demand seat is held by another user, other passengers don't just see a wall of errors. They can **Join the Seat Waitlist** and see their exact position in line (`#1 in Queue`).  
-* **Automatic Handover:** If the holding user's payment fails or their 120-second timer expires, the seat **automatically transfers to the next person in line**, starting their own 120-second checkout window!
-
-### 4. 120-Second Atomic Seat Hold & Mock Payment
-* Live animated countdown bar during checkout.
-* Toggle between **Simulate Pay (Success)** (generates a Boarding Pass with QR code and confetti) and **Simulate Pay (Fail)** (declines card and instantly releases hold back to the waitlist).
-
-### 5. Role-Based Access Control (RBAC) & Organiser Hub
-* Dedicated **Login & Account Registration** with Gmail/email and password.
-* Regular passengers are restricted from seeing operator data (**HTTP 403 Forbidden** wall on `/organiser`).
-* Authenticated Organisers (using passcode `admin123`) unlock the **Command Center** showing settled revenue, seat occupancy %, active holds, and live transaction audit trails.
-
-### 6. Dark Mode 🌙 & Light Mode ☀️
-* Seamless 1-click theme switcher in the navigation bar.
+* **Framework:** Next.js 16 (App Router), React 19, TypeScript
+* **Styling & UI:** Tailwind CSS, Lucide Icons, Canvas-Confetti
+* **Database Engine:** Embedded SQLite (`node:sqlite` DatabaseSync) in Write-Ahead Logging (WAL) mode
+* **Concurrency Model:** Transactional write serialization using `BEGIN IMMEDIATE`
+* **Route Corridor:** Vande Bharat Express (#22436), 6 stations from New Delhi (NDLS) to Patna Junction (PNBE)
 
 ---
 
-## 🏗️ Architecture
+## Core Engineering Features
 
-```mermaid
-flowchart TD
-    Client["Client Browser (Next.js 16 / React 19 / Tailwind CSS)"]
-    API["API Route Handlers (/api/hold, /api/pay, /api/auth, /api/stress-test)"]
-    Service["BookingService (ACID Isolation & Segment Algorithm)"]
-    DB[("SQLite WAL Database (data/railsync.db via node:sqlite)")]
+### 1. Multi-Station Segment Interval Allocation
+Unlike point-to-point ticket systems (e.g. flights or movie theaters), a train seat is an inventory segment across time and space.
+The 6-station route comprises 5 contiguous segments:
+```
+[0] New Delhi (NDLS) ─── [1] Kanpur Central (CNB) ─── [2] Prayagraj Jn (PRYJ) ─── [3] Varanasi Cantt (BSB) ─── [4] Pt. Deen Dayal Upadhyaya (DDU) ─── [5] Patna Jn (PNBE)
+```
+* **Non-Conflicting Allocation:** A passenger booking Seat 1A from New Delhi (0) to Kanpur (1) only locks Segment 0. The same Seat 1A remains available for booking between Kanpur (1) and Patna (5).
+* **Mathematical Collision Rule:** Two bookings or active holds conflict if and only if their intervals overlap:
+  $$\text{existing\_start} < \text{requested\_end} \quad \land \quad \text{existing\_end} > \text{requested\_start}$$
 
-    Client -->|REST & 3s Real-Time Polling| API
-    API -->|Synchronous In-Memory Calls| Service
-    Service -->|BEGIN IMMEDIATE / Write Locks| DB
+### 2. Zero Double-Booking Concurrency Engine
+To prevent race conditions when multiple users attempt to hold the exact same seat at the same millisecond:
+* The transaction executes inside `BEGIN IMMEDIATE`, immediately acquiring a reserved write lock on the SQLite database.
+* Confirmed bookings and active unexpired holds are queried inside the lock.
+* If clear, the 120-second hold is written atomically. Competing transactions wait up to 5,000ms (`busy_timeout = 5000`) and abort with `HTTP 409 Conflict` once the lock releases.
+* **Test Bench:** A live concurrency stress test panel (`/concurrency-test`) fires 50 asynchronous bot requests simultaneously to verify that exactly 1 lock is granted and 49 are rejected.
+
+### 3. 120-Second Atomic Hold & Expiry Lifecycle
+* Selecting an available seat reserves it with a 120-second Time-To-Live (TTL).
+* An animated real-time countdown bar visualizes checkout time.
+* If payment is completed within 120 seconds, the hold converts into a confirmed booking and issues a unique PNR (e.g., `PNR-8492014`).
+* If payment fails or the timer hits 0:00, the hold expires and the seat is released back to inventory.
+
+### 4. Automated FIFO Waitlist Promotion
+* When a seat is held or booked, other passengers can queue for that specific seat.
+* If the current hold expires or payment is declined, the backend automatically transfers the seat to the first person in line (`queue_position = 1`), starting their own 120-second checkout window without manual intervention.
+
+### 5. Ticket Cancellation & Refund Workflow
+* Passengers can inspect confirmed trips under **My Bookings** (`/my-bookings`).
+* Cancelling a ticket immediately frees the reserved segment, triggers waitlist auto-promotion, and logs a refund notification confirming that the fare (in ₹) will be credited to the original payment source within 3–5 working days.
+
+### 6. Role-Based Access Control (RBAC) & Security
+* **Passenger Role:** Default public tier. Guests can view seat layouts and train schedules; confirming a booking requires signing in. Passengers can only access and cancel their own tickets (protected against Insecure Direct Object References - IDOR).
+* **Organiser Role:** Protected operator portal (`/organiser`). The tab is hidden from regular passengers. Direct route access requires backend admin clearance (`admin@railsync.com` / `admin123`).
+* **Operator Telemetry:** Real-time metrics computed directly via SQL:
+  * Total Settled Revenue (`SUM(total_price)`)
+  * Seat Occupancy Rate (`occupied / total * 100`)
+  * Active Holds & Waitlist Counters
+  * Real-Time Passenger Audit Log
+
+---
+
+## Architecture Diagram
+
+```
+                     ┌──────────────────────────────────────────────┐
+                     │            Next.js Full-Stack App            │
+                     │                                              │
+┌─────────────────┐  │  ┌──────────────────────┐  ┌──────────────┐  │   ┌────────────────────┐
+│ Passenger /     │ <┼─>│ Client Interface     │  │ Route        │  │   │ SQLite (WAL Mode)  │
+│ Operator Browser│  │  │ React 19 UI          │<─┼> Handlers    │<─┼──>│ data/railsync.db   │
+└─────────────────┘  │  │ Tailwind / Real-Time │  │ (/api/*)     │  │   │ node:sqlite engine │
+                     │  └──────────────────────┘  └──────┬───────┘  │   └────────────────────┘
+                     │                                   │          │
+                     │                            ┌──────▼───────┐  │
+                     │                            │BookingService│  │
+                     │                            │ACID Domain   │  │
+                     │                            └──────────────┘  │
+                     └──────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## Database Schema
+
+```sql
+-- Users (Passenger vs Organiser)
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'passenger',
+  created_at TEXT NOT NULL
+);
+
+-- Trains & Stations (Multi-Stop Corridor)
+CREATE TABLE trains (
+  id TEXT PRIMARY KEY,
+  train_number TEXT NOT NULL,
+  name TEXT NOT NULL,
+  departure_time TEXT NOT NULL,
+  total_coaches INTEGER NOT NULL
+);
+
+CREATE TABLE stations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  train_id TEXT NOT NULL,
+  stop_order INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  arrival_time TEXT NOT NULL,
+  distance_km INTEGER NOT NULL,
+  FOREIGN KEY (train_id) REFERENCES trains(id)
+);
+
+-- Coaches & Seats
+CREATE TABLE coaches (
+  id TEXT PRIMARY KEY,
+  train_id TEXT NOT NULL,
+  coach_code TEXT NOT NULL,
+  class_type TEXT NOT NULL,
+  base_price REAL NOT NULL,
+  FOREIGN KEY (train_id) REFERENCES trains(id)
+);
+
+CREATE TABLE seats (
+  id TEXT PRIMARY KEY,
+  coach_id TEXT NOT NULL,
+  seat_number TEXT NOT NULL,
+  seat_type TEXT NOT NULL,
+  FOREIGN KEY (coach_id) REFERENCES coaches(id)
+);
+
+-- Atomic 120s Holds
+CREATE TABLE seat_holds (
+  id TEXT PRIMARY KEY,
+  seat_id TEXT NOT NULL,
+  train_id TEXT NOT NULL,
+  start_stop_order INTEGER NOT NULL,
+  end_stop_order INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  held_at TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  status TEXT NOT NULL, -- 'ACTIVE', 'EXPIRED', 'RELEASED', 'CONVERTED'
+  FOREIGN KEY (seat_id) REFERENCES seats(id)
+);
+
+-- Confirmed Bookings
+CREATE TABLE bookings (
+  id TEXT PRIMARY KEY,
+  booking_reference TEXT UNIQUE NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_email TEXT NOT NULL,
+  seat_id TEXT NOT NULL,
+  train_id TEXT NOT NULL,
+  start_stop_order INTEGER NOT NULL,
+  end_stop_order INTEGER NOT NULL,
+  status TEXT NOT NULL, -- 'CONFIRMED', 'CANCELLED'
+  total_price REAL NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (seat_id) REFERENCES seats(id)
+);
+
+-- FIFO Waitlist
+CREATE TABLE waitlist (
+  id TEXT PRIMARY KEY,
+  seat_id TEXT NOT NULL,
+  train_id TEXT NOT NULL,
+  start_stop_order INTEGER NOT NULL,
+  end_stop_order INTEGER NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  queue_position INTEGER NOT NULL,
+  status TEXT NOT NULL, -- 'WAITING', 'PROMOTED', 'EXPIRED', 'LEFT'
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (seat_id) REFERENCES seats(id)
+);
+```
+
+---
+
+## API Reference
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/api/trains` | `GET` | Retrieve route stations, coaches, and real-time seat availability for selected segment |
+| `/api/hold` | `POST` | Acquire atomic 120s seat hold wrapped in `BEGIN IMMEDIATE` transaction |
+| `/api/pay` | `POST` | Process mock payment (`CONFIRM` creates PNR; `FAIL` releases hold to waitlist) |
+| `/api/waitlist` | `POST`, `DELETE` | Join or leave the FIFO waitlist for a held seat |
+| `/api/bookings` | `GET`, `POST` | Retrieve user bookings or cancel an existing ticket (with IDOR check) |
+| `/api/auth` | `POST` | User registration, login, and administrator credential verification |
+| `/api/organiser` | `GET` | Return live business metrics (revenue, occupancy, active holds, audit trail) |
+| `/api/stress-test` | `POST` | Execute 50 concurrent seat requests to benchmark race-condition protection |
+
+---
+
+## Local Setup & Execution
 
 ### Prerequisites
-* Node.js v18+ or v20+ or v24+
-* npm v9+
+* Node.js 18.17+ or Node.js 20+ / 24+
+* npm 9+
 
-### 1-Command Startup
+### Installation & Run
 ```bash
 # 1. Clone the repository
 git clone https://github.com/aarushipujari/ticket.git
@@ -71,23 +209,24 @@ cd ticket
 # 2. Install dependencies
 npm install
 
-# 3. Build project
+# 3. Build optimized production package
 npm run build
 
 # 4. Start production server
 npm start
 ```
-Then open **[http://localhost:3000](http://localhost:3000)** in your browser!
+The application will be live at `http://localhost:3000`.
 
 ---
 
-## 🔑 Default Credentials
-| Role | Email | Password / Passcode | Capabilities |
+## Default Access Credentials
+
+| User Type | Email | Password | Access Scope |
 |---|---|---|---|
-| **Passenger** | Any registered Gmail | User password | Search routes, hold seats, pay, cancel, waitlist |
-| **Organiser** | `admin@railsync.com` | `admin123` | Access live revenue, telemetry, occupancy, audit tables |
+| **Passenger** | Any registered email | Custom password | Search, hold, simulated pay, cancel, waitlist |
+| **Administrator** | `admin@railsync.com` | `admin123` | Full Organiser Dashboard, revenue telemetry, audit trail |
 
 ---
 
-## 📋 Evaluation Criteria Mapping (50/50 Marks)
-See [`PROJECT_EVALUATION_GUIDE.md`](./PROJECT_EVALUATION_GUIDE.md) for the complete question-by-question viva defense script and technical justifications.
+## Verification & Evaluation Guide
+Refer to [`PROJECT_EVALUATION_GUIDE.md`](./PROJECT_EVALUATION_GUIDE.md) for the itemized mapping against all 10 evaluation rubrics and the examiner viva defense script.

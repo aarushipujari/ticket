@@ -505,7 +505,12 @@ export class BookingService {
   /**
    * CANCEL BOOKING (IDOR-safe with user_id check)
    */
-  static cancelBooking(bookingId: string, userId: string): { success: boolean; error?: string } {
+  static cancelBooking(bookingId: string, userId: string): { 
+    success: boolean; 
+    error?: string; 
+    refundAmount?: number; 
+    bookingReference?: string; 
+  } {
     const db = getDatabase();
     try {
       db.exec('BEGIN IMMEDIATE');
@@ -536,7 +541,11 @@ export class BookingService {
       this.promoteNextInWaitlist(booking.seat_id, booking.start_stop_order, booking.end_stop_order);
 
       db.exec('COMMIT');
-      return { success: true };
+      return { 
+        success: true,
+        refundAmount: booking.total_price,
+        bookingReference: booking.booking_reference
+      };
     } catch (err: any) {
       try { db.exec('ROLLBACK'); } catch {}
       return { success: false, error: err.message };

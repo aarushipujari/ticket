@@ -20,7 +20,10 @@ import {
   Compass,
   Sparkles,
   ChevronRight,
-  Calendar
+  Calendar,
+  Lock,
+  LogIn,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -60,6 +63,7 @@ export default function BookingPage() {
 
   // Booking confirmation modal
   const [confirmedBooking, setConfirmedBooking] = useState<any | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -205,6 +209,11 @@ export default function BookingPage() {
 
   // Join waitlist for held seat
   const handleJoinWaitlist = async (seatId: string) => {
+    if (!currentUser || currentUser.id === 'usr_guest') {
+      setShowLoginModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const res = await fetch('/api/waitlist', {
@@ -254,6 +263,13 @@ export default function BookingPage() {
   // Mock Payment Action (Confirm or Fail)
   const handlePayment = async (action: 'CONFIRM' | 'FAIL') => {
     if (!activeHold) return;
+
+    // Check if user is logged in
+    if (action === 'CONFIRM' && (!currentUser || currentUser.id === 'usr_guest')) {
+      setShowLoginModal(true);
+      return;
+    }
+
     setIsProcessing(true);
     setErrorMessage(null);
 
@@ -710,8 +726,17 @@ export default function BookingPage() {
                 onClick={() => handlePayment('CONFIRM')}
                 className="flex-1 md:flex-none flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl shadow-sm text-xs sm:text-sm transition-all"
               >
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirm &amp; Pay (₹{activeHold.price})</span>
+                {(!currentUser || currentUser.id === 'usr_guest') ? (
+                  <>
+                    <Lock className="w-4 h-4" />
+                    <span>Sign In to Book (₹{activeHold.price})</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Confirm &amp; Pay (₹{activeHold.price})</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -722,6 +747,68 @@ export default function BookingPage() {
               >
                 <XCircle className="w-4 h-4" />
                 <span>Simulate Decline</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIGN IN REQUIRED MODAL */}
+      {showLoginModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3 text-blue-600 dark:text-blue-400">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Sign In to Complete Booking</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Passenger account required</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              You can browse seat layouts and train schedules as a guest, but completing payment and generating an official Indian Railways PNR ticket requires an authenticated passenger account.
+            </p>
+
+            {activeHold && (
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 space-y-1.5 text-xs">
+                <div className="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                  <span>Selected Seat:</span>
+                  <span className="font-bold text-slate-900 dark:text-white font-mono">
+                    Coach {activeHold.coachCode} • Seat {activeHold.seatNumber}
+                  </span>
+                </div>
+                <div className="flex justify-between font-medium text-slate-600 dark:text-slate-300">
+                  <span>Journey Fare:</span>
+                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
+                    ₹{activeHold.price}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
+              <Link
+                href="/login?redirect=/"
+                className="w-full flex items-center justify-center space-x-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-blue-600/20 text-center"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In / Create Account ➔</span>
+              </Link>
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="w-full sm:w-auto px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-all"
+              >
+                Keep Browsing
               </button>
             </div>
           </div>

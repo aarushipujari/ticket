@@ -3,14 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import { useUser } from '@/context/UserContext';
 import { Booking } from '@/lib/types';
-import { Ticket, Calendar, MapPin, AlertCircle, CheckCircle2, XCircle, ArrowRight, Train, RefreshCw } from 'lucide-react';
+import {
+  Ticket,
+  MapPin,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
+  Train,
+  RefreshCw,
+  CreditCard,
+  Clock,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 
 export default function MyBookingsPage() {
   const { currentUser } = useUser();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+    refundAmount?: number;
+    pnr?: string;
+  } | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const userId = currentUser?.id || 'usr_guest';
@@ -33,12 +50,16 @@ export default function MyBookingsPage() {
     fetchBookings();
   }, [userId]);
 
-  const handleCancelBooking = async (bookingId: string) => {
-    if (!confirm('Are you sure you want to cancel this ticket? The seat will be immediately released to waiting passengers.')) {
+  const handleCancelBooking = async (b: Booking) => {
+    if (
+      !confirm(
+        `Are you sure you want to cancel ticket for ${b.train_name} (${b.booking_reference})? Your fare of ₹${b.total_price} will be refunded and the seat will be released.`
+      )
+    ) {
       return;
     }
 
-    setCancellingId(bookingId);
+    setCancellingId(b.id);
     setActionMessage(null);
 
     try {
@@ -46,7 +67,7 @@ export default function MyBookingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bookingId,
+          bookingId: b.id,
           userId,
         }),
       });
@@ -54,16 +75,25 @@ export default function MyBookingsPage() {
       const result = await res.json();
 
       if (!res.ok) {
-        setActionMessage({ type: 'error', text: result.error || 'Failed to cancel booking.' });
+        setActionMessage({
+          type: 'error',
+          text: result.error || 'Failed to cancel booking.',
+        });
       } else {
+        const refundAmt = result.refundAmount ?? b.total_price;
         setActionMessage({
           type: 'success',
-          text: 'Booking cancelled successfully. The seat inventory was restored and handed over to the waitlist.',
+          text: `Ticket ${b.booking_reference} cancelled successfully.`,
+          refundAmount: refundAmt,
+          pnr: b.booking_reference,
         });
         await fetchBookings();
       }
     } catch (err: any) {
-      setActionMessage({ type: 'error', text: err.message || 'Error communicating with server.' });
+      setActionMessage({
+        type: 'error',
+        text: err.message || 'Error communicating with server.',
+      });
     } finally {
       setCancellingId(null);
     }
@@ -79,7 +109,8 @@ export default function MyBookingsPage() {
             <span>My Bookings &amp; Itineraries</span>
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Confirmed rail reservations for <strong className="text-slate-800 dark:text-slate-200">{userName}</strong>
+            Confirmed rail reservations for{' '}
+            <strong className="text-slate-800 dark:text-slate-200">{userName}</strong>
           </p>
         </div>
 
@@ -92,21 +123,74 @@ export default function MyBookingsPage() {
         </Link>
       </div>
 
-      {/* Action Notification */}
-      {actionMessage && (
-        <div
-          className={`px-4 py-3.5 rounded-2xl flex items-center justify-between text-sm ${
-            actionMessage.type === 'success'
-              ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-300'
-              : 'bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-300'
-          }`}
-        >
+      {/* Prominent Cancellation & Refund Notification Box */}
+      {actionMessage && actionMessage.type === 'success' && (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border-2 border-emerald-500/30 dark:border-emerald-500/40 p-5 shadow-lg shadow-emerald-500/5 animate-fadeIn">
+          <button
+            onClick={() => setActionMessage(null)}
+            className="absolute top-4 right-4 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex items-start space-x-4">
+            <div className="w-12 h-12 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
+              <CheckCircle2 className="w-7 h-7" />
+            </div>
+
+            <div className="flex-1 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-emerald-950 dark:text-emerald-200">
+                  Ticket Cancelled &amp; Refund Initiated
+                </h3>
+                {actionMessage.pnr && (
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 font-mono text-xs font-bold border border-emerald-300 dark:border-emerald-700">
+                    {actionMessage.pnr}
+                  </span>
+                )}
+              </div>
+
+              {/* Crucial refund notice */}
+              <div className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-emerald-200 dark:border-emerald-900/50 space-y-1.5">
+                <div className="flex items-center space-x-2 text-sm font-semibold text-slate-900 dark:text-white">
+                  <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>
+                    Refund Amount:{' '}
+                    <strong className="text-emerald-600 dark:text-emerald-400 text-base">
+                      ₹{actionMessage.refundAmount}
+                    </strong>
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-300 font-medium">
+                  <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>
+                    Your money will be refunded to your original payment method in{' '}
+                    <strong className="text-amber-700 dark:text-amber-300">
+                      3–5 working days
+                    </strong>
+                    .
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2 text-[11px] text-slate-500 dark:text-slate-400">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-500" />
+                <span>
+                  The seat has been released and immediately restored to train inventory for waiting passengers.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {actionMessage && actionMessage.type === 'error' && (
+        <div className="px-4 py-3.5 rounded-2xl flex items-center justify-between text-sm bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 text-rose-800 dark:text-rose-300">
           <div className="flex items-center space-x-2.5">
-            {actionMessage.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            ) : (
-              <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
-            )}
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0" />
             <span>{actionMessage.text}</span>
           </div>
           <button
@@ -197,7 +281,9 @@ export default function MyBookingsPage() {
                     <p className="font-extrabold text-slate-900 dark:text-white text-sm mt-0.5">
                       {b.start_station_name} ➔ {b.end_station_name}
                     </p>
-                    <p className="text-slate-500 dark:text-slate-400">Stop {b.start_stop_order} to Stop {b.end_stop_order}</p>
+                    <p className="text-slate-500 dark:text-slate-400">
+                      Stop {b.start_stop_order} to Stop {b.end_stop_order}
+                    </p>
                   </div>
 
                   <div>
@@ -224,18 +310,26 @@ export default function MyBookingsPage() {
                 </div>
 
                 {/* Cancel Action */}
-                {!isCancelled && (
+                {!isCancelled ? (
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Cancellation immediately frees inventory and notifies the waitlist queue.
+                      Cancellation immediately frees inventory and refunds ₹{b.total_price} in 3–5 working days.
                     </span>
                     <button
                       disabled={cancellingId === b.id}
-                      onClick={() => handleCancelBooking(b.id)}
+                      onClick={() => handleCancelBooking(b)}
                       className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold transition-all self-end sm:self-auto"
                     >
                       {cancellingId === b.id ? 'Processing...' : 'Cancel Ticket'}
                     </button>
+                  </div>
+                ) : (
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center space-x-1.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Refund of ₹{b.total_price} in progress (3–5 working days)</span>
+                    </span>
+                    <span className="font-mono text-[10px]">Seat released</span>
                   </div>
                 )}
               </div>

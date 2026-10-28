@@ -18,7 +18,7 @@ This document maps the **RailSync Express** codebase directly to each of the 10 
 ---
 
 ### 2. What are your booking rules, including the edge cases?
-* **Rule 1 (Station Segment Non-Overlap):** A train stops at `[0: Grand Central, 1: East Park, 2: Highland Junction, 3: Riverport Gateway]`. A booking for `[0 -> 1]` locks only segment 0. The **exact same seat** remains 100% available for a different passenger traveling `[1 -> 3]`.
+* **Rule 1 (Station Segment Non-Overlap):** A train stops at `[0: New Delhi (NDLS), 1: Kanpur Central (CNB), 2: Prayagraj Jn (PRYJ), 3: Varanasi Cantt (BSB), 4: Pt. Deen Dayal Upadhyaya (DDU), 5: Patna Jn (PNBE)]`. A booking for `[0 -> 1]` (NDLS to CNB) locks only segment 0. The **exact same seat** remains 100% available for a different passenger traveling `[1 -> 5]` (CNB to PNBE) or any other non-overlapping segment.
 * **Rule 2 (Mathematical Collision Check):** Two passenger reservations clash if and only if:
   $$\text{existing\_start} < \text{requested\_end} \quad \text{AND} \quad \text{existing\_end} > \text{requested\_start}$$
 * **Rule 3 (120-Second Atomic Hold):** Selecting an available seat initiates an exclusive 120-second TTL countdown in the database. No other user can claim the seat during this period.
@@ -75,12 +75,12 @@ flowchart TD
 ### 6. Does the full booking flow work end to end?
 * **Demonstration Flow:**
   1. Open `http://localhost:3000`.
-  2. Select Origin (e.g. *Grand Central*) and Destination (e.g. *Riverport Gateway*).
-  3. Pick Coach A or Coach B. Click any green seat (e.g. *Seat 2B*).
+  2. Select Origin (e.g. *New Delhi (NDLS)*) and Destination (e.g. *Patna Jn (PNBE)* or intermediate *Kanpur Central (CNB)*).
+  3. Pick Coach E1 (Executive Chair Car) or Coach C1 (Chair Car). Click any green seat (e.g. *Seat 1A*).
   4. Notice the **Floating Checkout Drawer** appears with the live **120-second countdown bar**.
   5. Click **"Simulate Pay (Success)"**.
-  6. Instant confetti animation plays and a confirmed **Boarding Pass** with booking reference appears!
-  7. Check **"My Bookings"** (`/my-bookings`) to view the reservation and verify cancellation.
+  6. Instant confetti animation plays and a confirmed **Boarding Pass** with PNR booking reference (e.g., `PNR-8492014`) appears!
+  7. Check **"My Bookings"** (`/my-bookings`) to view the reservation, Indian Rupee (₹) fare, and verify cancellation.
 
 ---
 
@@ -96,9 +96,10 @@ flowchart TD
 
 ### 8. Can a user cheat, or reach data that isn't theirs?
 * **Role-Based Access Control (RBAC) & Protected Organiser Dashboard:**
-  * Only users authenticated with the **`organiser`** role can access the Organiser Hub (`/organiser`) or receive sensitive financial telemetry.
-  * If a regular passenger attempts to access `/organiser`, they are blocked with an **HTTP 403 Forbidden: Organiser Clearance Required** screen.
-  * Try it live: Click the lock icon next to "Organiser Hub" while logged in as Sarah Jenkins (Passenger). You will see the access denied security wall!
+  * Only users authenticated with the **`organiser`** role (`admin@railsync.com` / `admin123`) can access the Organiser Hub (`/organiser`) or receive sensitive financial telemetry.
+  * **Invisible to Normal Users:** When a passenger creates an account or signs in, the Organiser tab is completely invisible in the navigation bar.
+  * **Direct URL Blocking:** If a regular passenger attempts to navigate directly to `/organiser`, they are blocked with an **HTTP 403 Forbidden: Organiser Clearance Required** screen.
+  * **Backend Admin Credentials:** The administrator account is defined securely in the backend schema, not exposed as an open signup option.
 * **IDOR (Insecure Direct Object Reference) Protection:**
   * In `BookingService.cancelBooking(bookingId, userId)`:
     ```typescript
@@ -107,7 +108,7 @@ flowchart TD
     }
     ```
   * A user cannot cancel or modify another user's reservation simply by guessing or spoofing a `bookingId`.
-* **Server-Side Price & Segment Validation:** All fare calculations are computed strictly on the backend based on coach base prices and segment distances; the client cannot manipulate ticket prices.
+* **Server-Side Price & Segment Validation:** All fare calculations (in ₹) are computed strictly on the backend based on coach base prices and segment distances; the client cannot manipulate ticket prices.
 
 ---
 
