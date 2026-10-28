@@ -226,7 +226,3 @@ The application will be live at `http://localhost:3000`.
 | **Passenger** | Any registered email | Custom password | Search, hold, simulated pay, cancel, waitlist |
 | **Administrator** | `admin@railsync.com` | `admin123` | Full Organiser Dashboard, revenue telemetry, audit trail |
 
----
-
-## Verification & Evaluation Guide
-Refer to [`PROJECT_EVALUATION_GUIDE.md`](./PROJECT_EVALUATION_GUIDE.md) for the itemized mapping against all 10 evaluation rubrics and the examiner viva defense script.
